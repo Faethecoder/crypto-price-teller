@@ -81,14 +81,20 @@ const Index = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {cryptoData.map((crypto, index) => (
-                <CryptoCard 
-                  key={crypto.id} 
-                  data={crypto} 
-                  currency={currency}
-                  index={index}
-                />
-              ))}
+              {cryptoData && cryptoData.length > 0 ? (
+                cryptoData.map((crypto, index) => (
+                  <CryptoCard 
+                    key={crypto.id} 
+                    data={crypto} 
+                    currency={currency}
+                    index={index}
+                  />
+                ))
+              ) : (
+                <div className="p-4 rounded-lg bg-secondary/20 text-center">
+                  <p className="text-sm text-muted-foreground">No cryptocurrency data available</p>
+                </div>
+              )}
             </div>
           )}
         </main>

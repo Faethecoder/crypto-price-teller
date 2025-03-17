@@ -54,7 +54,9 @@ export const fetchCryptoData = async (): Promise<CryptoData[]> => {
       },
       price_change_percentage_24h: coin.price_change_percentage_24h,
       image: coin.image,
-      sparkline_in_7d: coin.sparkline_in_7d,
+      sparkline_in_7d: {
+        price: coin.sparkline_in_7d?.price || []
+      },
       last_updated: coin.last_updated
     }));
   } catch (error) {

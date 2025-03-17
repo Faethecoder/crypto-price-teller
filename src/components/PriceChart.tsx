@@ -50,10 +50,10 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
       price
     }));
   
-  // Calculate min and max for chart boundaries
-  const minPrice = Math.min(...prices) * 0.995;
-  const maxPrice = Math.max(...prices) * 1.005;
-  const currentPrice = data.current_price.usd;
+  // Calculate min and max for chart boundaries with fallbacks
+  const minPrice = prices.length ? Math.min(...prices) * 0.995 : 0;
+  const maxPrice = prices.length ? Math.max(...prices) * 1.005 : 0;
+  const currentPrice = data.current_price[currency];
     
   useEffect(() => {
     // Animation for chart on mount
@@ -75,19 +75,21 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
             hide 
           />
           <YAxis 
-            domain={[minPrice, maxPrice]} 
+            domain={[minPrice || 0, maxPrice || 100]} 
             hide 
           />
           <Tooltip 
             content={<ChartTooltip currency={currency} />} 
             cursor={false} 
           />
-          <ReferenceLine 
-            y={currentPrice} 
-            stroke={color} 
-            strokeDasharray="3 3" 
-            strokeOpacity={0.4} 
-          />
+          {currentPrice && (
+            <ReferenceLine 
+              y={currentPrice} 
+              stroke={color} 
+              strokeDasharray="3 3" 
+              strokeOpacity={0.4} 
+            />
+          )}
           <Line 
             type="monotone" 
             dataKey="price" 
