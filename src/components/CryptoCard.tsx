@@ -1,9 +1,10 @@
 
-import React from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUp, ArrowDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { CryptoData, Currency } from '../types/crypto';
 import { formatPrice, formatPercentage, getCryptoColor } from '../services/cryptoService';
 import { PriceChart } from './PriceChart';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface CryptoCardProps {
   data: CryptoData;
@@ -12,6 +13,8 @@ interface CryptoCardProps {
 }
 
 export const CryptoCard: React.FC<CryptoCardProps> = ({ data, currency, index }) => {
+  const [isChartOpen, setIsChartOpen] = useState(false);
+  
   const { 
     name, 
     symbol, 
@@ -66,7 +69,27 @@ export const CryptoCard: React.FC<CryptoCardProps> = ({ data, currency, index })
         </div>
       </div>
       
-      <PriceChart data={data} currency={currency} />
+      <Collapsible 
+        open={isChartOpen} 
+        onOpenChange={setIsChartOpen}
+        className="mt-2"
+      >
+        <CollapsibleTrigger className="w-full flex items-center justify-center text-xs text-muted-foreground py-1 hover:text-foreground transition-colors">
+          <span className="mr-1">
+            {isChartOpen ? 'Hide Chart' : 'Show Chart'}
+          </span>
+          {isChartOpen ? (
+            <ChevronUp className="w-3 h-3" />
+          ) : (
+            <ChevronDown className="w-3 h-3" />
+          )}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+          <div className="pt-2">
+            <PriceChart data={data} currency={currency} />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
