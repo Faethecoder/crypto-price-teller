@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ currency, onCurrencyChange }) =>
         <ChartLine className="w-6 h-6 text-primary" />
         <h1 className="text-lg font-semibold tracking-tight">
           <span className="text-primary">Crypto</span>
-          <span>Track</span>
+          <span className="text-foreground/90">Track</span>
         </h1>
       </div>
       

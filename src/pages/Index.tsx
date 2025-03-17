@@ -51,7 +51,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
+    <div className="min-h-screen bg-background">
       <div className="max-w-md mx-auto px-4 py-6">
         <Header 
           currency={currency} 
@@ -74,7 +74,7 @@ const Index = () => {
               {[1, 2, 3, 4, 5].map((i) => (
                 <div 
                   key={i} 
-                  className="h-32 rounded-2xl bg-muted/50 animate-pulse-soft"
+                  className="h-32 rounded-2xl bg-secondary/20 animate-pulse-soft"
                   style={{ animationDelay: `${i * 100}ms` }}
                 />
               ))}
