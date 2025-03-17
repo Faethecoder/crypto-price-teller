@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   LineChart, 
   Line, 
@@ -11,11 +11,14 @@ import {
 } from 'recharts';
 import { CryptoData, Currency } from '../types/crypto';
 import { formatPrice, getCryptoColor } from '../services/cryptoService';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface PriceChartProps {
   data: CryptoData;
   currency: Currency;
 }
+
+type TimeRange = '1W' | '1M' | '1Y';
 
 interface ChartTooltipProps {
   active?: boolean;
@@ -38,21 +41,48 @@ const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label, cur
 
 export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
   const chartRef = useRef<HTMLDivElement>(null);
+  const [timeRange, setTimeRange] = useState<TimeRange>('1W');
   
   const prices = data.sparkline_in_7d?.price || [];
   const color = getCryptoColor(data.id);
   
-  // Prepare chart data (last 24 hours from sparkline data)
-  const hourlyData = prices
-    .slice(-24)
-    .map((price, index) => ({
-      time: `${24 - index}h`,
+  // Prepare chart data based on selected time range
+  const getChartData = () => {
+    if (!prices.length) return [];
+    
+    let filteredPrices: number[] = [];
+    let labels: string[] = [];
+    
+    switch (timeRange) {
+      case '1W':
+        // Use last 7 days (24 data points)
+        filteredPrices = prices.slice(-24);
+        labels = Array.from({length: 24}, (_, i) => `${24 - i}h`);
+        break;
+      case '1M':
+        // Simulate 1 month data (30 data points)
+        filteredPrices = prices.length >= 30 ? prices.slice(-30) : prices;
+        labels = Array.from({length: filteredPrices.length}, (_, i) => `${filteredPrices.length - i}d`);
+        break;
+      case '1Y':
+        // Simulate 1 year data (use all available data points)
+        filteredPrices = prices;
+        labels = Array.from({length: filteredPrices.length}, (_, i) => `${filteredPrices.length - i}d`);
+        break;
+    }
+    
+    return filteredPrices.map((price, index) => ({
+      time: labels[index],
       price
     }));
+  };
+  
+  const chartData = getChartData();
   
   // Calculate min and max for chart boundaries with fallbacks
-  const minPrice = prices.length ? Math.min(...prices) * 0.995 : 0;
-  const maxPrice = prices.length ? Math.max(...prices) * 1.005 : 0;
+  const filteredPrices = chartData.map(item => item.price);
+  const minPrice = filteredPrices.length ? Math.min(...filteredPrices) * 0.995 : 0;
+  const maxPrice = filteredPrices.length ? Math.max(...filteredPrices) * 1.005 : 0;
   const currentPrice = data.current_price[currency];
     
   useEffect(() => {
@@ -63,45 +93,60 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
   }, []);
 
   return (
-    <div 
-      ref={chartRef} 
-      className="w-full h-32 mt-2 chart-container" 
-      style={{ opacity: 0 }}
-    >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={hourlyData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-          <XAxis 
-            dataKey="time" 
-            hide 
-          />
-          <YAxis 
-            domain={[minPrice || 0, maxPrice || 100]} 
-            hide 
-          />
-          <Tooltip 
-            content={<ChartTooltip currency={currency} />} 
-            cursor={false} 
-          />
-          {currentPrice && (
-            <ReferenceLine 
-              y={currentPrice} 
-              stroke={color} 
-              strokeDasharray="3 3" 
-              strokeOpacity={0.4} 
+    <div className="space-y-2">
+      <Tabs 
+        defaultValue="1W" 
+        value={timeRange} 
+        onValueChange={(value) => setTimeRange(value as TimeRange)}
+        className="w-full justify-center"
+      >
+        <TabsList className="grid grid-cols-3 h-8 w-full max-w-[200px] mx-auto bg-background/10">
+          <TabsTrigger value="1W" className="text-xs">Week</TabsTrigger>
+          <TabsTrigger value="1M" className="text-xs">Month</TabsTrigger>
+          <TabsTrigger value="1Y" className="text-xs">Year</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      <div 
+        ref={chartRef} 
+        className="w-full h-32 chart-container" 
+        style={{ opacity: 0 }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <XAxis 
+              dataKey="time" 
+              hide 
             />
-          )}
-          <Line 
-            type="monotone" 
-            dataKey="price" 
-            stroke={color} 
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4, strokeWidth: 0 }}
-            isAnimationActive={true}
-            animationDuration={1500}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+            <YAxis 
+              domain={[minPrice || 0, maxPrice || 100]} 
+              hide 
+            />
+            <Tooltip 
+              content={<ChartTooltip currency={currency} />} 
+              cursor={false} 
+            />
+            {currentPrice && (
+              <ReferenceLine 
+                y={currentPrice} 
+                stroke={color} 
+                strokeDasharray="3 3" 
+                strokeOpacity={0.4} 
+              />
+            )}
+            <Line 
+              type="monotone" 
+              dataKey="price" 
+              stroke={color} 
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0 }}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
