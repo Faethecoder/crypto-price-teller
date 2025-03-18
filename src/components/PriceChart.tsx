@@ -32,6 +32,7 @@ const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label, cur
     return (
       <div className="glass-card p-2 text-xs shadow-soft">
         <p className="font-medium">{formatPrice(payload[0].value, currency)}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
       </div>
     );
   }
@@ -53,21 +54,53 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
     let filteredPrices: number[] = [];
     let labels: string[] = [];
     
+    const currentDate = new Date();
+    
     switch (timeRange) {
       case '1W':
         // Use last 7 days (24 data points)
         filteredPrices = prices.slice(-24);
-        labels = Array.from({length: 24}, (_, i) => `${24 - i}h`);
+        
+        // Generate day labels for the week view
+        labels = Array.from({length: filteredPrices.length}, (_, i) => {
+          const day = new Date(currentDate);
+          day.setHours(currentDate.getHours() - (filteredPrices.length - i - 1));
+          return day.getHours() === 0 ? 'Midnight' : `${day.getHours()}:00`;
+        });
         break;
+        
       case '1M':
         // Simulate 1 month data (30 data points)
         filteredPrices = prices.length >= 30 ? prices.slice(-30) : prices;
-        labels = Array.from({length: filteredPrices.length}, (_, i) => `${filteredPrices.length - i}d`);
+        
+        // Generate week labels for the month view
+        labels = Array.from({length: filteredPrices.length}, (_, i) => {
+          const day = new Date(currentDate);
+          day.setDate(currentDate.getDate() - (filteredPrices.length - i - 1));
+          return `${day.getDate()}/${day.getMonth() + 1}`;
+        });
         break;
+        
       case '1Y':
         // Simulate 1 year data (use all available data points)
         filteredPrices = prices;
-        labels = Array.from({length: filteredPrices.length}, (_, i) => `${filteredPrices.length - i}d`);
+        
+        // Generate month labels for the year view
+        labels = Array.from({length: filteredPrices.length}, (_, i) => {
+          const day = new Date(currentDate);
+          day.setDate(currentDate.getDate() - (filteredPrices.length - i - 1));
+          
+          // Show month name if it's the 1st day of the month or first data point
+          const isFirstDay = day.getDate() === 1;
+          const isFirstPoint = i === 0;
+          
+          if (isFirstDay || isFirstPoint || i % 5 === 0) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return monthNames[day.getMonth()];
+          }
+          
+          return '';
+        });
         break;
     }
     
@@ -116,7 +149,9 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <XAxis 
               dataKey="time" 
-              hide 
+              tick={{ fontSize: 10 }}
+              tickFormatter={(value) => value || ''}
+              interval="preserveStartEnd"
             />
             <YAxis 
               domain={[minPrice || 0, maxPrice || 100]} 
