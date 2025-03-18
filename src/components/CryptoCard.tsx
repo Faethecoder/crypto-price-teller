@@ -8,9 +8,17 @@ interface CryptoCardProps {
   data: CryptoData;
   currency: Currency;
   index: number;
+  telegramTheme?: {
+    bg_color?: string;
+    text_color?: string;
+    hint_color?: string;
+    link_color?: string;
+    button_color?: string;
+    button_text_color?: string;
+  };
 }
 
-export const CryptoCard: React.FC<CryptoCardProps> = ({ data, currency, index }) => {
+export const CryptoCard: React.FC<CryptoCardProps> = ({ data, currency, index, telegramTheme }) => {
   const { 
     name, 
     symbol, 
@@ -23,10 +31,25 @@ export const CryptoCard: React.FC<CryptoCardProps> = ({ data, currency, index })
   const isPositive = price_change_percentage_24h >= 0;
   const cryptoColor = getCryptoColor(data.id);
   
+  // Apply Telegram theme styles if available
+  const cardStyle = telegramTheme ? {
+    backgroundColor: telegramTheme.bg_color ? `${telegramTheme.bg_color}80` : undefined,
+    borderColor: telegramTheme.hint_color ? `${telegramTheme.hint_color}20` : undefined,
+  } : {};
+  
+  const textStyle = telegramTheme ? {
+    color: telegramTheme.text_color || undefined
+  } : {};
+  
+  const secondaryTextStyle = telegramTheme ? {
+    color: telegramTheme.hint_color || undefined
+  } : {};
+
   return (
     <div 
       className={`glass-card rounded-2xl p-4 shadow-glass transition-all duration-300 animate-fade-in`}
       style={{ 
+        ...cardStyle,
         animationDelay: `${index * 100}ms`,
         opacity: 0
       }}
@@ -45,13 +68,13 @@ export const CryptoCard: React.FC<CryptoCardProps> = ({ data, currency, index })
             />
           </div>
           <div>
-            <h3 className="font-medium">{name}</h3>
-            <p className="text-xs text-muted-foreground uppercase">{symbol}</p>
+            <h3 className="font-medium" style={textStyle}>{name}</h3>
+            <p className="text-xs text-muted-foreground uppercase" style={secondaryTextStyle}>{symbol}</p>
           </div>
         </div>
         
         <div className="flex flex-col items-end">
-          <p className="font-semibold">{formatPrice(price, currency)}</p>
+          <p className="font-semibold" style={textStyle}>{formatPrice(price, currency)}</p>
           <div className={`flex items-center text-xs ${
             isPositive ? 'text-green-500' : 'text-red-500'
           }`}>

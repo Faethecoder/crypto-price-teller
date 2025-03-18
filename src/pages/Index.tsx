@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { CryptoCard } from '@/components/CryptoCard';
 import { fetchCryptoData } from '@/services/cryptoService';
 import { CryptoData, Currency } from '@/types/crypto';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 const Index = () => {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
@@ -12,12 +13,18 @@ const Index = () => {
   const [currency, setCurrency] = useState<Currency>('usd');
   const [refreshInterval, setRefreshInterval] = useState<number | null>(null);
   const { toast } = useToast();
+  const { webApp, colorScheme } = useTelegramWebApp();
 
   const loadCryptoData = async () => {
     try {
       const data = await fetchCryptoData();
       setCryptoData(data);
       setLoading(false);
+      
+      // If running in Telegram, notify successful load with haptic feedback
+      if (webApp?.HapticFeedback) {
+        webApp.HapticFeedback.notificationOccurred('success');
+      }
     } catch (error) {
       console.error('Failed to fetch crypto data:', error);
       toast({
@@ -26,6 +33,11 @@ const Index = () => {
         variant: "destructive",
       });
       setLoading(false);
+      
+      // If running in Telegram, notify error with haptic feedback
+      if (webApp?.HapticFeedback) {
+        webApp.HapticFeedback.notificationOccurred('error');
+      }
     }
   };
 
@@ -46,16 +58,50 @@ const Index = () => {
     };
   }, []);
 
+  // Set up Telegram Main Button if we're in a Telegram mini app
+  useEffect(() => {
+    if (webApp?.MainButton) {
+      webApp.MainButton.setText('Refresh Prices');
+      webApp.MainButton.show();
+      
+      const handleRefresh = () => {
+        loadCryptoData();
+        if (webApp.HapticFeedback) {
+          webApp.HapticFeedback.impactOccurred('medium');
+        }
+      };
+      
+      webApp.MainButton.onClick(handleRefresh);
+      
+      return () => {
+        webApp.MainButton.offClick(handleRefresh);
+        webApp.MainButton.hide();
+      };
+    }
+  }, [webApp]);
+
   const handleCurrencyChange = (newCurrency: Currency) => {
     setCurrency(newCurrency);
+    
+    // Provide haptic feedback in Telegram
+    if (webApp?.HapticFeedback) {
+      webApp.HapticFeedback.selectionChanged();
+    }
   };
 
+  // Apply Telegram theme colors if available
+  const themeStyle = webApp?.themeParams ? {
+    backgroundColor: webApp.themeParams.bg_color || undefined,
+    color: webApp.themeParams.text_color || undefined,
+  } : {};
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={themeStyle}>
       <div className="max-w-md mx-auto px-4 py-6">
         <Header 
           currency={currency} 
           onCurrencyChange={handleCurrencyChange} 
+          telegramTheme={webApp?.themeParams}
         />
         
         <main className="mt-6 space-y-4">
@@ -88,6 +134,7 @@ const Index = () => {
                     data={crypto} 
                     currency={currency}
                     index={index}
+                    telegramTheme={webApp?.themeParams}
                   />
                 ))
               ) : (
