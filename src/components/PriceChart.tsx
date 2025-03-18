@@ -54,52 +54,46 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, currency }) => {
     let filteredPrices: number[] = [];
     let labels: string[] = [];
     
-    const currentDate = new Date();
+    const now = new Date();
     
     switch (timeRange) {
       case '1W':
-        // Use last 7 days (24 data points)
-        filteredPrices = prices.slice(-24);
+        // Use last 7 days of data points
+        filteredPrices = prices.slice(-7);
         
-        // Generate day labels for the week view
+        // Generate day labels for the week view (Monday, Tuesday, etc.)
         labels = Array.from({length: filteredPrices.length}, (_, i) => {
-          const day = new Date(currentDate);
-          day.setHours(currentDate.getHours() - (filteredPrices.length - i - 1));
-          return day.getHours() === 0 ? 'Midnight' : `${day.getHours()}:00`;
+          const date = new Date();
+          date.setDate(now.getDate() - (filteredPrices.length - i - 1));
+          const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          return days[date.getDay()];
         });
         break;
         
       case '1M':
-        // Simulate 1 month data (30 data points)
-        filteredPrices = prices.length >= 30 ? prices.slice(-30) : prices;
+        // Simulate 1 month data (4 weeks)
+        filteredPrices = prices.length >= 4 ? prices.slice(-4) : prices;
         
-        // Generate week labels for the month view
+        // Generate week labels for the month view (Week 1, Week 2, etc.)
         labels = Array.from({length: filteredPrices.length}, (_, i) => {
-          const day = new Date(currentDate);
-          day.setDate(currentDate.getDate() - (filteredPrices.length - i - 1));
-          return `${day.getDate()}/${day.getMonth() + 1}`;
+          return `Week ${i + 1}`;
         });
         break;
         
       case '1Y':
-        // Simulate 1 year data (use all available data points)
-        filteredPrices = prices;
+        // Simulate 1 year data (12 months)
+        filteredPrices = prices.length >= 12 ? 
+          // Take 12 evenly spaced points from the price array
+          Array.from({length: 12}, (_, i) => {
+            const index = Math.floor(i * (prices.length / 12));
+            return prices[index];
+          }) : 
+          prices;
         
-        // Generate month labels for the year view
+        // Generate month labels for the year view (Jan, Feb, etc.)
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         labels = Array.from({length: filteredPrices.length}, (_, i) => {
-          const day = new Date(currentDate);
-          day.setDate(currentDate.getDate() - (filteredPrices.length - i - 1));
-          
-          // Show month name if it's the 1st day of the month or first data point
-          const isFirstDay = day.getDate() === 1;
-          const isFirstPoint = i === 0;
-          
-          if (isFirstDay || isFirstPoint || i % 5 === 0) {
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return monthNames[day.getMonth()];
-          }
-          
-          return '';
+          return monthNames[i % 12];
         });
         break;
     }
